@@ -1,19 +1,20 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"io"
-	"io/ioutil"
+	"time"
 )
 
-func main() {
-	var buffer bytes.Buffer
-	reader := bytes.NewBufferString("Example of io.TeeReader\n")
-	teeReader := io.TeeReader(reader, &buffer)
-	// データを読み捨てる
-	_, _ = ioutil.ReadAll(teeReader)
+// 新しく作られるgoroutineが呼ぶ関数
+func sub() {
+	fmt.Println("sub() is running")
+	time.Sleep(time.Second)
+	fmt.Println("sub() is finished")
+}
 
-	// けどバッファに残ってる
-	fmt.Println(buffer.String())
+func main() {
+	fmt.Println("start sub()")
+	// goroutineを作って関数を実行
+	go sub()
+	time.Sleep(2 * time.Second)
 }
