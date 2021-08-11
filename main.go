@@ -1,15 +1,19 @@
 package main
 
 import (
-	"net/http"
+	"fmt"
+	"io"
 	"os"
 )
 
 func main() {
-	request, err := http.NewRequest("GET", "http://ascii.jp", nil)
-	if err != nil {
-		panic(err)
+	for {
+		buffer := make([]byte, 5)
+		size, err := os.Stdin.Read(buffer)
+		if err == io.EOF {
+			fmt.Println("EOF")
+			break
+		}
+		fmt.Printf("size=%d input '%s'\n", size, string(buffer))
 	}
-	request.Header.Set("X-TEST", "ヘッダーも追加できます ")
-	request.Write(os.Stdout)
 }
