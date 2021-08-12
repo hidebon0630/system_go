@@ -56,6 +56,9 @@ func processSession(conn net.Conn) {
 			// コンテンツをgzip化して転送
 			var buffer bytes.Buffer
 			writer := gzip.NewWriter(&buffer)
+			io.WriteString(writer, content)
+			writer.Close()
+			response.Body = ioutil.NopCloser(&buffer)
 			response.ContentLength = int64(buffer.Len())
 			response.Header.Set("Content-Encoding", "gzip")
 		} else {
