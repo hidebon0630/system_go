@@ -1,20 +1,20 @@
 package main
 
 import (
-	"context"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
-	fmt.Println("start sub()")
-	// 終了を受け取るための終了関数付きコンテキスト
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		fmt.Println("sub() is finished")
-		// 終了を通知
-		cancel()
-	}()
-	// 終了を待つ
-	<-ctx.Done()
-	fmt.Println("all tasks are finished")
+	// サイズが1より大きいチャネルを作成
+	signals := make(chan os.Signal, 1)
+	// SIGINT(Ctrl+C)を受け取る
+	signal.Notify(signals, syscall.SIGINT)
+
+	// シグナルがくるまで待つ
+	fmt.Println("Waiting SIGINT (CTRL+C)")
+	<-signals
+	fmt.Println("SIGINT arrived")
 }
