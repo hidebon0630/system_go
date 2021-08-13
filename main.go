@@ -2,45 +2,39 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-
-	"github.com/edsrzf/mmap-go"
+	"syscall"
 )
 
 func main() {
-	// テストデータを書き込み
-	var testData = []byte("0123456789ABCDEF")
-	var testPath = filepath.Join(os.TempDir(), "testdata")
-	err := ioutil.WriteFile(testPath, testData, 0644)
+	kq, err := syscall.Kqueue()
 	if err != nil {
 		panic(err)
 	}
-
-	// メモリにマッピング
-	// mは[]byteのエイリアスなので添字アクセス可能
-	f, err := os.OpenFile(testPath, os.O_RDWR, 0644)
+	// 監視対象のファイルディスクリプタを取得
+	fd, err := syscall.Open("./test", syscall.O_RDONLY, 0)
 	if err != nil {
 		panic(err)
 	}
-	defer f.Close()
-	m, err := mmap.Map(f, mmap.RDWR, 0)
-	if err != nil {
-		panic(err)
+	// 監視したいイベントの構造体を作成
+	ev1 := syscall.Kevent_t{
+		Ident:  uint64(fd),
+		Filter: syscall.EVFILT_VNODE,
+		Flags:  syscall.EV_ADD | syscall.EV_ENABLE | syscall.EV_ONESHOT,
+		Fflags: syscall.NOTE_DELETE | syscall.NOTE_WRITE,
+		Data:   0,
+		Udata:  nil,
 	}
-	defer m.Unmap()
-
-	// メモリ上のデータを修正して書き込む
-	m[9] = 'X'
-	m.Flush()
-
-	// 読み込んでみる
-	fileData, err := ioutil.ReadAll(f)
-	if err != nil {
-		panic(err)
+	// イベント待ちの無限ループ
+	for {
+		// kevent作成
+		events := make([]syscall.Kevent_t, 10)
+		nev, err := syscall.Kevent(kq, []syscall.Kevent_t{ev1}, events, nil)
+		if err != nil {
+			panic(err)
+		}
+		// イベントを確認
+		for i := 0; i < nev; i++ {
+			fmt.Printf("Event [%d] -> %+v\n", i, events[i])
+		}
 	}
-	fmt.Printf("original: %s\n", testData)
-	fmt.Printf("mmap: %s\n", m)
-	fmt.Printf("file: %s\n", fileData)
 }
