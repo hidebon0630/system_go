@@ -1,38 +1,33 @@
 package main
 
 import (
-	"log"
-	"net"
+	"fmt"
+	"io"
 	"os"
-	"path/filepath"
 )
 
+// 新規作成
+func open() {
+	file, err := os.Create("textfile.txt")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	io.WriteString(file, "New file content\n")
+}
+
+// 読み込み
+func read() {
+	file, err := os.Open("textfile.txt")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	fmt.Println("Read file:")
+	io.Copy(os.Stdout, file)
+}
+
 func main() {
-	clientPath := filepath.Join(os.TempDir(), "unixdomainsocket-client")
-	// エラーチェックは削除（存在しなかったらしなかったで問題ないので不要）
-	os.Remove(clientPath)
-	conn, err := net.ListenPacket("unixgram", clientPath)
-	if err != nil {
-		panic(err)
-	}
-	// 送信先のアドレス
-	unixServerAddr, err := net.ResolveUnixAddr(
-		"unixgram", filepath.Join(os.TempDir(), "unixdomainsocket-server"))
-	var serverAddr net.Addr = unixServerAddr
-	if err != nil {
-		panic(err)
-	}
-	defer conn.Close()
-	log.Println("Sending to server")
-	_, err = conn.WriteTo([]byte("Hello from Client"), serverAddr)
-	if err != nil {
-		panic(err)
-	}
-	log.Println("Receiving from server")
-	buffer := make([]byte, 1500)
-	length, _, err := conn.ReadFrom(buffer)
-	if err != nil {
-		panic(err)
-	}
-	log.Printf("Received: %s\n", string(buffer[:length]))
+	open()
+	read()
 }
