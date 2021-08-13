@@ -2,22 +2,22 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 )
 
 func main() {
-	if len(os.Args) == 1 {
-		fmt.Printf("%s [exec file name]", os.Args[0])
-		os.Exit(1)
-	}
-	for _, path := range filepath.SplitList(os.Getenv("PATH")) {
-		execpath := filepath.Join(path, os.Args[1])
-		_, err := os.Stat(execpath)
-		if !os.IsNotExist(err) {
-			fmt.Println(execpath)
-			return
-		}
-	}
-	os.Exit(1)
+	// パスをそのままクリーンにする
+	fmt.Println(filepath.Clean("./path/filepath/../path.go"))
+	// path/path.go
+
+	// パスを絶対パスに整形
+	abspath, _ := filepath.Abs("path/filepath/path_unix.go")
+	fmt.Println(abspath)
+	// /usr/local/go/src/path/filepath/path_unix.go
+
+	// パスを相対パスに整形
+	relpath, _ := filepath.Rel("/usr/local/go/src",
+		"/usr/local/go/src/path/filepath/path.go")
+	fmt.Println(relpath)
+	// path/filepath/path.go
 }
