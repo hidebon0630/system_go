@@ -1,52 +1,53 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
+	"log"
+
+	"gopkg.in/fsnotify.v1"
 )
 
-var imageSuffix = map[string]bool{
-	".jpg":  true,
-	".jpeg": true,
-	".png":  true,
-	".webp": true,
-	".gif":  true,
-	".tiff": true,
-	".eps":  true,
-}
-
 func main() {
-	if len(os.Args) == 1 {
-		fmt.Printf(`Find images
-
-Usage:
-   %s [path to find]
-	 `, os.Args[0])
-		return
-	}
-	root := os.Args[1]
-
-	err := filepath.Walk(root,
-		func(path string, info os.FileInfo, err error) error {
-			if info.IsDir() {
-				if info.Name() == "_build" {
-					return filepath.SkipDir
-				}
-				return nil
-			}
-			ext := strings.ToLower(filepath.Ext(info.Name()))
-			if imageSuffix[ext] {
-				rel, err := filepath.Rel(root, path)
-				if err != nil {
-					return nil
-				}
-				fmt.Printf("%s\n", rel)
-			}
-			return nil
-		})
+	counter := 0
+	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		fmt.Println(1, err)
+		panic(err)
 	}
+	defer watcher.Close()
+
+	done := make(chan bool)
+	go func() {
+		for {
+			select {
+			case event := <-watcher.Events:
+				log.Println("event:", event)
+				if event.Op&fsnotify.Create == fsnotify.Create {
+					log.Println("created file:", event.Name)
+					counter++
+				} else if event.Op&fsnotify.Write == fsnotify.Write {
+					log.Println("modified file:", event.Name)
+					counter++
+				} else if event.Op&fsnotify.Remove == fsnotify.Remove {
+					log.Println("removed file:", event.Name)
+					counter++
+				} else if event.Op&fsnotify.Rename == fsnotify.Rename {
+					log.Println("renamed file:", event.Name)
+					counter++
+				} else if event.Op&fsnotify.Chmod == fsnotify.Chmod {
+					log.Println("chmod file:", event.Name)
+					counter++
+				}
+			case err := <-watcher.Errors:
+				log.Println("error:", err)
+			}
+			if counter > 3 {
+				done <- true
+			}
+		}
+	}()
+
+	err = watcher.Add(".")
+	if err != nil {
+		log.Fatal(err)
+	}
+	<-done
 }
