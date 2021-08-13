@@ -2,22 +2,51 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
+	"strings"
 )
 
+var imageSuffix = map[string]bool{
+	".jpg":  true,
+	".jpeg": true,
+	".png":  true,
+	".webp": true,
+	".gif":  true,
+	".tiff": true,
+	".eps":  true,
+}
+
 func main() {
-	// パスをそのままクリーンにする
-	fmt.Println(filepath.Clean("./path/filepath/../path.go"))
-	// path/path.go
+	if len(os.Args) == 1 {
+		fmt.Printf(`Find images
 
-	// パスを絶対パスに整形
-	abspath, _ := filepath.Abs("path/filepath/path_unix.go")
-	fmt.Println(abspath)
-	// /usr/local/go/src/path/filepath/path_unix.go
+Usage:
+   %s [path to find]
+	 `, os.Args[0])
+		return
+	}
+	root := os.Args[1]
 
-	// パスを相対パスに整形
-	relpath, _ := filepath.Rel("/usr/local/go/src",
-		"/usr/local/go/src/path/filepath/path.go")
-	fmt.Println(relpath)
-	// path/filepath/path.go
+	err := filepath.Walk(root,
+		func(path string, info os.FileInfo, err error) error {
+			if info.IsDir() {
+				if info.Name() == "_build" {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+			ext := strings.ToLower(filepath.Ext(info.Name()))
+			if imageSuffix[ext] {
+				rel, err := filepath.Rel(root, path)
+				if err != nil {
+					return nil
+				}
+				fmt.Printf("%s\n", rel)
+			}
+			return nil
+		})
+	if err != nil {
+		fmt.Println(1, err)
+	}
 }
