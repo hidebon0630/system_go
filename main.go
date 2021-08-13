@@ -1,27 +1,53 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io/ioutil"
 	"net"
+	"net/http"
+	"net/http/httputil"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 func main() {
-	fmt.Println("Listen tick server at 224.0.0.1:9999")
-	address, err := net.ResolveUDPAddr("udp", "224.0.0.1:9999")
+	path := filepath.Join(os.TempDir(), "unixdomainsocket-sample")
+	os.Remove(path)
+	listener, err := net.Listen("unix", path)
 	if err != nil {
 		panic(err)
 	}
-	listener, err := net.ListenMulticastUDP("udp", nil, address)
 	defer listener.Close()
-
-	buffer := make([]byte, 1500)
-
+	fmt.Println("Server is running at " + path)
 	for {
-		length, remoteAddress, err := listener.ReadFromUDP(buffer)
+		conn, err := listener.Accept()
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("Server %v\n", remoteAddress)
-		fmt.Printf("Now    %s\n", string(buffer[:length]))
+		go func() {
+			fmt.Printf("Accept %v\n", conn.RemoteAddr())
+			// リクエストを読み込む
+			request, err := http.ReadRequest(bufio.NewReader(conn))
+			if err != nil {
+				panic(err)
+			}
+			dump, err := httputil.DumpRequest(request, true)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println(string(dump))
+			// レスポンスを書き込む
+			response := http.Response{
+				StatusCode: 200,
+				ProtoMajor: 1,
+				ProtoMinor: 0,
+				Body: ioutil.NopCloser(
+					strings.NewReader("Hello World\n")),
+			}
+			response.Write(conn)
+			conn.Close()
+		}()
 	}
 }
