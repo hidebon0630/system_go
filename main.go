@@ -1,35 +1,32 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"net"
-	"net/http"
-	"net/http/httputil"
 	"os"
 	"path/filepath"
 )
 
 func main() {
-	conn, err := net.Dial("unix",
-		filepath.Join(os.TempDir(), "unixdomainsocket-sample"))
+	path := filepath.Join(os.TempDir(), "unixdomainsocket-server")
+	// エラーチェックは削除（存在しなかったらしなかったで問題ないので不要）
+	os.Remove(path)
+	fmt.Println("Server is running at " + path)
+	conn, err := net.ListenPacket("unixgram", path)
 	if err != nil {
 		panic(err)
 	}
-	request, err := http.NewRequest(
-		"get", "http://localhost:8888", nil)
-	if err != nil {
-		panic(err)
+	defer conn.Close()
+	buffer := make([]byte, 1500)
+	for {
+		length, remoteAddress, err := conn.ReadFrom(buffer)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("Received from %v: %v\n", remoteAddress, string(buffer[:length]))
+		_, err = conn.WriteTo([]byte("Hello from Server"), remoteAddress)
+		if err != nil {
+			panic(err)
+		}
 	}
-	request.Write(conn)
-	response, err := http.ReadResponse(
-		bufio.NewReader(conn), request)
-	if err != nil {
-		panic(err)
-	}
-	dump, err := httputil.DumpResponse(response, true)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(string(dump))
 }
