@@ -1,20 +1,24 @@
 package main
 
 import (
-	"io"
+	"fmt"
 	"os"
 )
 
-// 読み込み
-func append() {
-	file, err := os.OpenFile("textfile.txt", os.O_RDWR|os.O_APPEND, 0666)
+func main() {
+	dir, err := os.Open("/")
 	if err != nil {
 		panic(err)
 	}
-	defer file.Close()
-	io.WriteString(file, "Appended content\n")
-}
-
-func main() {
-	append()
+	fileInfos, err := dir.Readdir(-1)
+	if err != nil {
+		panic(err)
+	}
+	for _, fileInfo := range fileInfos {
+		if fileInfo.IsDir() {
+			fmt.Printf("[Dir] %s\n", fileInfo.Name())
+		} else {
+			fmt.Printf("[File] %s\n", fileInfo.Name())
+		}
+	}
 }
