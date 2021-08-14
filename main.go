@@ -1,30 +1,23 @@
 package main
 
 import (
-	"io"
+	"fmt"
 	"os"
-	"os/exec"
-
-	"github.com/creack/pty"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
-	cmd := exec.Command("./check")
-	stdpty, stdtty, _ := pty.Open()
-	defer stdtty.Close()
-	cmd.Stdin = stdpty
-	cmd.Stdout = stdpty
-	errpty, errtty, _ := pty.Open()
-	defer errtty.Close()
-	cmd.Stderr = errtty
-	go func() {
-		io.Copy(os.Stdout, stdpty)
-	}()
-	go func() {
-		io.Copy(os.Stderr, errpty)
-	}()
-	err := cmd.Run()
-	if err != nil {
-		panic(err)
+	// サイズが1より大きいチャネルを作成
+	signals := make(chan os.Signal, 1)
+	// 最初のチャネル以降は、可変長引数で任意の数のシグナルを設定可能
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+
+	s := <-signals
+	switch s {
+	case syscall.SIGINT:
+		fmt.Println("SIGINT")
+	case syscall.SIGTERM:
+		fmt.Println("SIGTERM")
 	}
 }
