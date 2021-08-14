@@ -1,22 +1,30 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"os"
+	"os/exec"
 
-	"github.com/mattn/go-colorable"
-	"github.com/mattn/go-isatty"
+	"github.com/creack/pty"
 )
 
-var data = "\033[34m\033[47m\033[4mB\033[31me\n\033[24m\033[30mOS\033[49m\033[m\n"
-
 func main() {
-	var stdOut io.Writer
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		stdOut = colorable.NewColorableStdout()
-	} else {
-		stdOut = colorable.NewNonColorable(stdOut)
+	cmd := exec.Command("./check")
+	stdpty, stdtty, _ := pty.Open()
+	defer stdtty.Close()
+	cmd.Stdin = stdpty
+	cmd.Stdout = stdpty
+	errpty, errtty, _ := pty.Open()
+	defer errtty.Close()
+	cmd.Stderr = errtty
+	go func() {
+		io.Copy(os.Stdout, stdpty)
+	}()
+	go func() {
+		io.Copy(os.Stderr, errpty)
+	}()
+	err := cmd.Run()
+	if err != nil {
+		panic(err)
 	}
-	fmt.Fprintln(stdOut, data)
 }
