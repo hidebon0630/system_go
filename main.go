@@ -2,20 +2,26 @@ package main
 
 import (
 	"fmt"
-	"os/signal"
-	"syscall"
-	"time"
+	"os"
+	"strconv"
 )
 
 func main() {
-	// 最初の10秒はCtrl+Cで止まる
-	fmt.Println("Accpet Ctrl + C for 10 second")
-	time.Sleep(time.Second * 10)
-
-	// 可変長引数で任意の数のシグナルを設定可能
-	signal.Ignore(syscall.SIGINT, syscall.SIGHUP)
-
-	// 次の10秒はCtrl+Cを無視する
-	fmt.Println("Ignore Ctrl+C for 10 second")
-	time.Sleep(time.Second * 10)
+	if len(os.Args) < 2 {
+		fmt.Printf("usage: %s [pid]\n", os.Args[0])
+		return
+	}
+	// 第一引数で指定されたプロセスIDを数値に変換
+	pid, err := strconv.Atoi(os.Args[1])
+	if err != nil {
+		panic(err)
+	}
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		panic(err)
+	}
+	// シグナルを送る
+	process.Signal(os.Kill)
+	// Killの場合は次のショートカットも利用可能
+	process.Kill()
 }
