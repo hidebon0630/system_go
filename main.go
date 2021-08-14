@@ -8,6 +8,6 @@ import (
 func main() {
 	fmt.Printf("ユーザーID: %d\n", os.Getuid())
 	fmt.Printf("グループID: %d\n", os.Getgid())
-	groups, _ := os.Getgroups()
-	fmt.Printf("サブグループID: %v\n", groups)
+	fmt.Printf("実効ユーザーID: %d\n", os.Geteuid())
+	fmt.Printf("実効グループID: %d\n", os.Getegid())
 }
