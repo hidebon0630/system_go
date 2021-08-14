@@ -3,17 +3,29 @@ package main
 import (
 	"fmt"
 	"sync"
+	"time"
 )
 
-func initialize() {
-	fmt.Println("初期化処理")
-}
-
-var once sync.Once
-
 func main() {
-	// 3回呼び出しても一度しか呼ばれない。
-	once.Do(initialize)
-	once.Do(initialize)
-	once.Do(initialize)
+	var mutex sync.Mutex
+	cond := sync.NewCond(&mutex)
+
+	for _, name := range []string{"A", "B", "C"} {
+		go func(name string) {
+			// ロックしてからWaitメソッドを呼ぶ
+			mutex.Lock()
+			defer mutex.Unlock()
+			// BroadCast()が呼ばれるまで待つ
+			cond.Wait()
+			// 呼ばれた！
+			fmt.Println(name)
+		}(name)
+	}
+
+	fmt.Println("よーい")
+	time.Sleep(time.Second)
+	fmt.Println("どん！ ")
+	// まっているgoroutineを一斉に起こす
+	cond.Broadcast()
+	time.Sleep(time.Second)
 }
