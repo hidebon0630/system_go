@@ -6,6 +6,5 @@ import (
 )
 
 func main() {
-	wd, _ := os.Getwd()
-	fmt.Println(wd)
+	fmt.Println(os.ExpandEnv("${HOME}/gobin"))
 }
