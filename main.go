@@ -5,27 +5,15 @@ import (
 	"sync"
 )
 
+func initialize() {
+	fmt.Println("初期化処理")
+}
+
+var once sync.Once
+
 func main() {
-	var wg sync.WaitGroup
-
-	// ジョブ数をあらかじめ登録
-	wg.Add(2)
-
-	go func() {
-		// 非同期で仕事をする(1)
-		fmt.Println("仕事1")
-		// Doneで完了を通知
-		wg.Done()
-	}()
-
-	go func() {
-		// 非同期で仕事をする(1)
-		fmt.Println("仕事2")
-		// Doneで完了を通知
-		wg.Done()
-	}()
-
-	// すべての処理が終わりのを待つ
-	wg.Wait()
-	fmt.Println("終了")
+	// 3回呼び出しても一度しか呼ばれない。
+	once.Do(initialize)
+	once.Do(initialize)
+	once.Do(initialize)
 }
