@@ -1,22 +1,22 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os/exec"
+	"io"
+	"os"
+
+	"github.com/mattn/go-colorable"
+	"github.com/mattn/go-isatty"
 )
 
+var data = "\033[34m\033[47m\033[4mB\033[31me\n\033[24m\033[30mOS\033[49m\033[m\n"
+
 func main() {
-	count := exec.Command("./count")
-	stdout, _ := count.StdoutPipe()
-	go func() {
-		scanner := bufio.NewScanner(stdout)
-		for scanner.Scan() {
-			fmt.Printf("(stdout) %s\n", scanner.Text())
-		}
-	}()
-	err := count.Run()
-	if err != nil {
-		panic(err)
+	var stdOut io.Writer
+	if isatty.IsTerminal(os.Stdout.Fd()) {
+		stdOut = colorable.NewColorableStdout()
+	} else {
+		stdOut = colorable.NewNonColorable(stdOut)
 	}
+	fmt.Fprintln(stdOut, data)
 }
