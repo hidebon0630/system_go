@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
+	"runtime"
 	"sync"
 )
 
 func main() {
-	// Poolを作成。Newで新規作成時のコードを実装
 	var count int
 	pool := sync.Pool{
 		New: func() interface{} {
@@ -15,11 +15,9 @@ func main() {
 		},
 	}
 
-	// 追加した要素から受け取れる
-	// プールがからだと新規作成
-	pool.Put("manualy added: 1")
-	pool.Put("manualy added: 2")
+	// GCを呼ぶと追加された要素が消える
+	pool.Put("removed 1")
+	pool.Put("removed 2")
+	runtime.GC()
 	fmt.Println(pool.Get())
-	fmt.Println(pool.Get())
-	fmt.Println(pool.Get()) // これは新規作成
 }
