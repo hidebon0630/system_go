@@ -7,6 +7,7 @@ import (
 
 func main() {
 	fmt.Println("waiting 5 seconds")
-	time.Sleep(5 * time.Second)
+	after := time.After(5 * time.Second)
+	<-after
 	fmt.Println("done")
 }
