@@ -6,6 +6,7 @@ import (
 )
 
 func main() {
-	t := time.Now()
-	fmt.Println(t.String())
+	fmt.Println("waiting 5 seconds")
+	time.Sleep(5 * time.Second)
+	fmt.Println("done")
 }
