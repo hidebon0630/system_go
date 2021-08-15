@@ -2,21 +2,24 @@ package main
 
 import (
 	"fmt"
+	"sync"
 )
 
 func main() {
-	// 長さ1, 確保された要素2のスライスを作成
-	s := make([]int, 1, 2)
-	fmt.Println(&s[0], len(s), cap(s))
-	fmt.Println(s)
+	// Poolを作成。Newで新規作成時のコードを実装
+	var count int
+	pool := sync.Pool{
+		New: func() interface{} {
+			count++
+			return fmt.Sprintf("created: %d", count)
+		},
+	}
 
-	// 1要素追加
-	s = append(s, 100)
-	fmt.Println(&s[0], len(s), cap(s))
-	fmt.Println(s)
-
-	// 更に要素を追加（新しく配列が確保され直す）
-	s = append(s, 200)
-	fmt.Println(&s[0], len(s), cap(s))
-	fmt.Println(s)
+	// 追加した要素から受け取れる
+	// プールがからだと新規作成
+	pool.Put("manualy added: 1")
+	pool.Put("manualy added: 2")
+	fmt.Println(pool.Get())
+	fmt.Println(pool.Get())
+	fmt.Println(pool.Get()) // これは新規作成
 }
